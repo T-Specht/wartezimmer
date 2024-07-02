@@ -129,10 +129,33 @@ function App() {
     return "";
   });
 
+  const [notfications, setNotifications] = useLocalStorage(
+    "notifications",
+    () => {
+      return "none";
+    }
+  );
+
+  const [notificationPermission, setNotificationPermission] = useState(false);
+
   const [saal, setSaal] = useLocalStorage<BoxState["saal"]>("saal", () => {
     //return prompt("Box Nummer");
     return "a1";
   });
+
+  const [isFirstStateUpdate, setIsFirstStateUpdate] = useState(true);
+
+  useEffect(() => {
+    if (notfications == "zko" || notfications == "zpr") {
+      Notification.requestPermission().then((result) => {
+        if (result == "granted") {
+          setNotificationPermission(true);
+        } else {
+          setNotificationPermission(false);
+        }
+      });
+    }
+  }, [notfications]);
 
   // useEffect(() => {
   //   setBox(prompt("Box Nummer (99 als Saalbetreuer)")!);
@@ -143,15 +166,43 @@ function App() {
 
   useEffect(() => {
     // Listen for incoming messages
-    socket.on("update", (stateUpdate) => {
+
+    socket.on("update", (stateUpdate: BoxState[]) => {
       console.log("Socket: ", stateUpdate);
+
+      // Filter for changes to current state
+      const changes = stateUpdate.filter(
+        (state) =>
+          !saalState.some((s) => s.box === state.box && s.saal === state.saal)
+      );
+
+      // Send notification for each change if enabled and permission granted
+      for (const c of changes) {
+        if (
+          notfications == c.abteilung &&
+          notificationPermission &&
+          !isFirstStateUpdate
+        ) {
+          new Notification(`Box ${c.box} neu im Wartezimmer`, {
+            body: c.schritt,
+          });
+        }
+      }
+
+      if (isFirstStateUpdate) {
+        setIsFirstStateUpdate(false);
+      }
 
       setSaalState(stateUpdate);
     });
-  }, []);
+
+    return () => {
+      socket.removeAllListeners("update");
+    };
+  }, [notfications, saalState, notificationPermission, isFirstStateUpdate]);
 
   useEffect(() => {
-    document.body.style.setProperty("zoom", (clamp(zoom, 0.4, 4)).toString());
+    document.body.style.setProperty("zoom", clamp(zoom, 0.4, 4).toString());
   }, [zoom]);
 
   return (
@@ -161,7 +212,7 @@ function App() {
           <div className="text-lg font-bold my-2">
             <h1>Wartezimmer</h1>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <div className="grid items-center gap-1.5  w-full">
               <Label>Saal</Label>
               <Select
@@ -202,6 +253,28 @@ function App() {
                 value={zoom}
               ></Input>
             </div>
+            {box == "99" && (
+              <div className="grid items-center gap-1.5  w-full">
+                <Label>Benachrichtungen</Label>
+                <Select
+                  value={notfications}
+                  onValueChange={(e) => setNotifications(e)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Benachrichtungen aktivieren" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Keine Benachrichtungen</SelectItem>
+                    <SelectItem value="zko">
+                      ZKO {!notificationPermission && "(keine Berechtigung)"}
+                    </SelectItem>
+                    <SelectItem value="zpr">
+                      ZPR {!notificationPermission && "(keine Berechtigung)"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
@@ -213,9 +286,9 @@ function App() {
                 saal={saal}
                 activeBox={box!}
                 state={
-                  saalState.filter(
+                  saalState.find(
                     (s) => s.box == num.toString() && s.saal == saal
-                  )[0]
+                  ) || null
                 }
                 onCancel={() => {
                   setSaalState((prev) => {
