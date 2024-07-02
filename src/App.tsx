@@ -20,7 +20,7 @@ import { BoxState, SAAL_BOX } from "./state";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
 import { StopWatch } from "./StopWatch";
-import { useLocalStorage, useSessionStorage } from "usehooks-ts";
+import { useLocalStorage } from "usehooks-ts";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 
@@ -129,7 +129,7 @@ function App() {
     return "";
   });
 
-  const [notfications, setNotifications] = useSessionStorage(
+  const [notfications, setNotifications] = useLocalStorage(
     "notifications",
     () => {
       return "none";
@@ -271,16 +271,18 @@ function App() {
             </div>
             {box == "99" && (
               <div className="grid items-center gap-1.5  w-full">
-                <Label>Benachrichtungen</Label>
+                <Label>Benachrichtigungen</Label>
                 <Select
                   value={notfications}
                   onValueChange={(e) => setNotifications(e)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Benachrichtungen aktivieren" />
+                    <SelectValue placeholder="Benachrichtigungen aktivieren" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Keine Benachrichtungen</SelectItem>
+                    <SelectItem value="none">
+                      Keine Benachrichtigungen
+                    </SelectItem>
                     <SelectItem value="zko">
                       ZKO {!notificationPermission && "(keine Berechtigung)"}
                     </SelectItem>
