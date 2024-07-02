@@ -183,9 +183,13 @@ function App() {
           notificationPermission &&
           !isFirstStateUpdate
         ) {
-          new Notification(`Box ${c.box} neu im Wartezimmer`, {
+          const n = new Notification(`Box ${c.box} neu im Wartezimmer`, {
             body: c.schritt,
           });
+
+          setTimeout(() => {
+            n.close();
+          }, 3000);
         }
       }
 
