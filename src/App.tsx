@@ -2,6 +2,10 @@ import io from "socket.io-client";
 
 const socket = io(import.meta.env.DEV ? "http://localhost:3001" : "/");
 
+function clamp(val: number, min: number, max: number) {
+  return val > max ? max : val < min ? min : val;
+}
+
 import { useEffect, useState } from "react";
 import {
   Select,
@@ -147,7 +151,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.body.style.setProperty("zoom", zoom.toString());
+    document.body.style.setProperty("zoom", (clamp(zoom, 0.4, 4)).toString());
   }, [zoom]);
 
   return (
