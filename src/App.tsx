@@ -146,16 +146,20 @@ function App() {
   const [isFirstStateUpdate, setIsFirstStateUpdate] = useState(true);
 
   useEffect(() => {
-    if (notfications == "zko" || notfications == "zpr") {
+    if (
+      (notfications == "zko" || notfications == "zpr") &&
+      !notificationPermission
+    ) {
       Notification.requestPermission().then((result) => {
         if (result == "granted") {
           setNotificationPermission(true);
         } else {
+          alert("Keine Erlaubnis, Benachrichtigungen zu senden.");
           setNotificationPermission(false);
         }
       });
     }
-  }, [notfications]);
+  }, [notfications, notificationPermission]);
 
   // useEffect(() => {
   //   setBox(prompt("Box Nummer (99 als Saalbetreuer)")!);
@@ -180,10 +184,11 @@ function App() {
       for (const c of changes) {
         if (
           notfications == c.abteilung &&
+          saal == c.saal &&
           notificationPermission &&
           !isFirstStateUpdate
         ) {
-          const n = new Notification(`Box ${c.box} neu im Wartezimmer`, {
+          const n = new Notification(`Box ${c.box}`, {
             body: c.schritt,
           });
 
@@ -203,7 +208,13 @@ function App() {
     return () => {
       socket.removeAllListeners("update");
     };
-  }, [notfications, saalState, notificationPermission, isFirstStateUpdate]);
+  }, [
+    notfications,
+    saalState,
+    notificationPermission,
+    isFirstStateUpdate,
+    saal,
+  ]);
 
   useEffect(() => {
     document.body.style.setProperty("zoom", clamp(zoom, 0.4, 4).toString());
