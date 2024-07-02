@@ -20,7 +20,7 @@ import { BoxState, SAAL_BOX } from "./state";
 import { cn } from "./lib/utils";
 import { Button } from "./components/ui/button";
 import { StopWatch } from "./StopWatch";
-import { useLocalStorage } from "usehooks-ts";
+import { useLocalStorage, useSessionStorage } from "usehooks-ts";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 
@@ -129,7 +129,7 @@ function App() {
     return "";
   });
 
-  const [notfications, setNotifications] = useLocalStorage(
+  const [notfications, setNotifications] = useSessionStorage(
     "notifications",
     () => {
       return "none";
@@ -148,7 +148,8 @@ function App() {
   useEffect(() => {
     if (
       (notfications == "zko" || notfications == "zpr") &&
-      !notificationPermission
+      !notificationPermission &&
+      !!window.Notification
     ) {
       Notification.requestPermission().then((result) => {
         if (result == "granted") {
